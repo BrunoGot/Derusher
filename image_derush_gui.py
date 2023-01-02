@@ -15,13 +15,19 @@ class ImageDerushGui(QtWidgets.QWidget):
         #path=r"I:\01_Rush\Rush\Raven\ShootRaven\19_12_2022\selectionA"
         self.path = path
         self.save_folder = self.create_folder(self.SAVE_FOLDER_NAME)
-        self.imgs = self.load_folder(self.path) #[r"I:\01_Rush\Rush\Raven\ShootRaven\19_12_2022\DSC05180.JPG"]
+        self.imgs = self.load_folder(self.path)  # [r"I:\01_Rush\Rush\Raven\ShootRaven\19_12_2022\DSC05180.JPG"]
+
         ##layout
         self.main_layout = QtWidgets.QVBoxLayout()
+        self.top_layout = QtWidgets.QHBoxLayout()
         #img#
         self.pic_btn = PicButton(img_path = self.get_current_img())
-        self.main_layout.addWidget(self.pic_btn)
+        self.top_layout.addWidget(self.pic_btn)
         ##
+        #folderview
+        self.folder_view = QtWidgets.QListWidget(self)
+        self.top_layout.addWidget(self.folder_view)
+        self.main_layout.addLayout(self.top_layout)
         #actions btn#
         self.open_folder_btn = QtWidgets.QPushButton("Open Folder")
         self.open_folder_btn.clicked.connect(self.open_folder)
@@ -43,6 +49,11 @@ class ImageDerushGui(QtWidgets.QWidget):
         ##
         self.setLayout(self.main_layout)
         ##
+
+        ##init datas
+        print("init datas")
+        self.load_existing_selection(self.save_folder)
+
 
     def next_img(self):
         self.current_index =(self.current_index+1)%(len(self.imgs)-1)
@@ -81,22 +92,39 @@ class ImageDerushGui(QtWidgets.QWidget):
 
         img_path = self.get_current_img()
         saved_img_path = os.path.join(self.save_folder,self.imgs[self.current_index])
-        shutil.copy(img_path,saved_img_path)
-        print("image saved")
+        if not os.path.exists(saved_img_path):
+            shutil.copy(img_path,saved_img_path)
+            item = QtWidgets.QListWidgetItem()
+            item.setText(self.imgs[self.current_index])
+            self.folder_view.addItem(item)
+            print("image saved")
+        print("image already exist")
 
     def create_folder(self,folder_name):
         """
         create a local folder
         """
-        try:
-            path = os.path.join(self.path,folder_name)
-            if not os.path.isdir(path):
-                os.mkdir(path)
-            print("path = {}".format(path))
-            return path
 
+        path = os.path.join(self.path, folder_name)
+        try:
+            if os.path.isdir(path):
+                print("dir existing")
+                #self.load_existing_selection(path)
+            else:
+                print("create selection folder")
+                os.mkdir(path)
+                print("path = {}".format(path))
         except Exception as e:
             print("NO PATH !! : {}".format(e))
+        return path
+
+    def load_existing_selection(self,path):
+        selection = os.listdir(path)
+        for i in selection:
+            print("selected = {}".format(i))
+            item = QtWidgets.QListWidgetItem()
+            item.setText(i)
+            self.folder_view.addItem(item)
 
     def open_folder(self):
         os.system(f'start {self.path}')
